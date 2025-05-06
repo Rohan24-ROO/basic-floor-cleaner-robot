@@ -42,9 +42,13 @@ Back-moves backward Stop- stops
 ## Folder Structure
 
 floor-cleaner-robot/
+
 ├── code/                 # Arduino code (e.g., floor_cleaner.ino)
+
 ├── images/               # Any photos or diagrams
+
 ├── docs/                 # Your .docx file and any additional reports
+
 ├── README.md             # To be created (see below)
 
 ## Future Improvements
