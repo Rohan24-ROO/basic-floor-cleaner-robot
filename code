@@ -1,0 +1,182 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
+
+SoftwareSerial BTSerial(10, 11); // RX, TX pins for Bluetooth module (HC-05)
+
+// Motor pins
+const int motor1Pin1 = 2;
+const int motor1Pin2 = 3;
+const int motor2Pin1 = 4;
+const int motor2Pin2 = 5;
+
+// Motor driver enable pins
+const int motor1EnablePin = 9;
+const int motor2EnablePin = 7;
+
+// Water pump relay pin
+const int waterPumpPin = 6;
+
+// LCD I2C display
+LiquidCrystal_I2C lcd(0x3F, 16, 2); // Change the address if necessary
+
+unsigned long pumpStartTime = 0; // Variable to store the pump start time
+const unsigned long pumpDuration = 5000; // Duration for the pump to run (10 seconds)
+
+void setup() {
+  lcd.init();                      // initialize the lcd
+  lcd.init();
+  // Print a message to the LCD.
+  lcd.backlight();
+  lcd.setCursor(1, 0);
+  lcd.print("Robot Cleaning");
+  lcd.setCursor(2, 1);
+  lcd.print("Initialized");
+  delay(2000);
+  lcd.clear();
+
+  pinMode(motor1Pin1, OUTPUT);
+  pinMode(motor1Pin2, OUTPUT);
+  pinMode(motor2Pin1, OUTPUT);
+  pinMode(motor2Pin2, OUTPUT);
+  pinMode(motor1EnablePin, OUTPUT);
+  pinMode(motor2EnablePin, OUTPUT);
+  pinMode(waterPumpPin, OUTPUT);
+
+  digitalWrite(motor1EnablePin, HIGH); // Enable motor 1
+  digitalWrite(motor2EnablePin, HIGH); // Enable motor 2
+
+  BTSerial.begin(9600);
+}
+
+void loop() {
+  if (BTSerial.available()) {
+    char command = BTSerial.read();
+    executeCommand(command);
+  }
+
+  // Check if it's time to turn off the water pump
+  if (digitalRead(waterPumpPin) == HIGH && millis() - pumpStartTime >= pumpDuration) {
+    turnOffWaterPump();
+  }
+}
+
+void executeCommand(char command) {
+  switch (command) {
+    case 'F': // Forward
+      moveForward();
+      break;
+    case 'B': // Backward
+      moveBackward();
+      break;
+    case 'L': // Left
+      turnLeft();
+      break;
+    case 'R': // Right
+      turnRight();
+      break;
+    case 'S': // Stop
+      stopMoving();
+      break;
+    case 'P': // Water pump ON
+      turnOnWaterPump();
+      break;
+    case 'p': // Water pump OFF
+      turnOffWaterPump();
+      break;
+    default:
+      break;
+  }
+}
+
+// Move the robot forward
+void moveForward() {
+  analogWrite(motor1Pin1, 255); // Full speed forward
+  digitalWrite(motor1Pin2, LOW);
+  analogWrite(motor2Pin1, 255); // Full speed forward
+  digitalWrite(motor2Pin2, LOW);
+
+  lcd.setCursor(1, 0);
+  lcd.print("TURNING RIGHT ");
+  delay(2000);
+  lcd.clear();
+
+  delay(200);
+  stopMoving();
+}
+
+// Move the robot backward
+void moveBackward() {
+  digitalWrite(motor1Pin1, LOW);
+  analogWrite(motor1Pin2, 255); // Full speed backward
+  digitalWrite(motor2Pin1, LOW);
+  analogWrite(motor2Pin2, 255); // Full speed backward
+
+  lcd.setCursor(1, 0);
+  lcd.print("TURNING LEFT ");
+  delay(2000);
+  lcd.clear();
+
+  delay(200);
+  stopMoving();
+}
+
+// Turn the robot left
+void turnLeft() {
+  digitalWrite(motor1Pin1, LOW);
+  analogWrite(motor1Pin2, 255); // Full speed backward
+  analogWrite(motor2Pin1, 255); // Full speed forward
+  digitalWrite(motor2Pin2, LOW);
+
+  lcd.setCursor(1, 0);
+  lcd.print("MOVING FOREWARD");
+  delay(2000);
+  lcd.clear();
+}
+
+// Turn the robot right
+void turnRight() {
+  analogWrite(motor1Pin1, 255); // Full speed forward
+  digitalWrite(motor1Pin2, LOW);
+  digitalWrite(motor2Pin1, LOW);
+  analogWrite(motor2Pin2, 255); // Full speed backward
+
+  lcd.setCursor(1, 0);
+  lcd.print("MOVING BACKWORD ");
+  delay(2000);
+  lcd.clear();
+}
+
+// Stop the robot
+void stopMoving() {
+  digitalWrite(motor1Pin1, LOW);
+  digitalWrite(motor1Pin2, LOW);
+  digitalWrite(motor2Pin1, LOW);
+  digitalWrite(motor2Pin2, LOW);
+
+  lcd.setCursor(1, 0);
+  lcd.print("Stopped");
+  delay(2000);
+  lcd.clear();
+}
+
+// Turn on the water pump
+void turnOnWaterPump() {
+  digitalWrite(waterPumpPin, HIGH);
+  pumpStartTime = millis(); // Record the start time of the pump
+
+  lcd.setCursor(1, 0);
+  lcd.print("Pump: ON ");
+  delay(2000);
+  lcd.clear();
+}
+
+// Turn off the water pump
+void turnOffWaterPump() {
+  digitalWrite(waterPumpPin, LOW);
+
+  lcd.setCursor(1, 0);
+  lcd.print("Pump: OFF ");
+  delay(2000);
+  lcd.clear();
+}
